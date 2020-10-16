@@ -1,2 +1,2 @@
 # octaveScripts
-In this repository several Octave scripts will be available
+This repository contains GNU Octave scripts for multiple uses.
