@@ -1,1 +1,12 @@
+The files in this folder have a minimal functionality.
+They rely on parameters that were figured out for specific files.
 
+analyzeNEB.m:
+The number of images (nIm and nImZOOM), lastNEB and possibly other variables are tailored for a specific file, and have to be changed based on the specific trajectory file
+that is opened.
+There are other things that will probably not work first hand and need to be optimized for a particular file.
+Only open trajectory files from Orca, or xyz files that contain the following structure:
+
+"Number of atoms"
+"some text with five separate words and an energy value"
+"AtomType x y z"
