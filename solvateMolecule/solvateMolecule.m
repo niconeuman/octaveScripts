@@ -53,26 +53,28 @@ solvatedMolecule(1:tNext,:) = myMol;
 tIter = 1;
 for k = 1:nSolvMol
 
+  #Current position of the center of mass to situate a new molecule
   currPos = rand(3,1).*[xBoxMax-xBoxMin;yBoxMax-yBoxMin;zBoxMax-zBoxMin]+[xBoxMin;yBoxMin;zBoxMin];
   alpha = rand(1)*pi;
   beta = rand(1)*pi;
   gamma = rand(1)*pi;
 
+  #Random orientation for new molecule
   #Function erot can be obtained by installing easyspin.
   RotMat = erot(alpha,beta,gamma);
 
-  if nSolventType == 1
-      currentSolventMol = solventMol;
-      currentSolventMol = [currentSolventMol(:,1), (RotMat*currentSolventMol(:,2:4)')'];
-  elseif nSolventType == 2
 
-      chanceFirst = (solventMolCell{1,2}/(solventMolCell{1,2}+solventMolCell{2,2}));    #Normalize the chance
+  if nSolventType == 1                                                          #For one type of solvent
+      currentSolventMol = solventMol-centerOfMass(solventMol);                  #The molecule is centered for better rotation
+      currentSolventMol = [currentSolventMol(:,1), (RotMat*currentSolventMol(:,2:4)')'];
+  elseif nSolventType == 2                                                      #For two types of solvents
+      chanceFirst = (solventMolCell{1,2}/(solventMolCell{1,2}+solventMolCell{2,2}));    #Normalize the chance for each solvent
       dice = rand(1);
 
       if dice < chanceFirst
-          currentSolventMol = solventMolCell{1,1};
+          currentSolventMol = solventMolCell{1,1}-centerOfMass(solventMolCell{1,1});
       else
-          currentSolventMol = solventMolCell{2,1};
+          currentSolventMol = solventMolCell{2,1}-centerOfMass(solventMolCell{2,1});
       end
       currentSolventMol = [currentSolventMol(:,1), (RotMat*currentSolventMol(:,2:4)')'];
   end
@@ -80,11 +82,18 @@ for k = 1:nSolvMol
   tStep = size(currentSolventMol,1);
 
   #Only add a molecule if it doesn't collide with previous ones.
-#  if calculateDistance(currPos,currentSolventMol,solvatedMolecule,tNext)>vanDerWaals
-  if areTouching(currPos,currentSolventMol,solvatedMolecule,tNext) == 0
+
+  if areTouching(currPos,currentSolventMol,solvatedMolecule,tNext) == 0         #If molecules are not touching, place it and move to next molecule
     solvatedMolecule(tNext+1:tNext+tStep,:) = currentSolventMol+[0,currPos'];
     tNext = tNext+tStep;
     k = k + 1;
+  else #areTouching == 1                                                        #If they are touching, increase the distance slightly to the solute, and try once more
+    currPos = currPos + 0.1*(currPos-[xMolCenter;yMolCenter;zMolCenter]);
+      if areTouching(currPos,currentSolventMol,solvatedMolecule,tNext) == 0     #If molecules are not touching, place it and move to next molecule
+        solvatedMolecule(tNext+1:tNext+tStep,:) = currentSolventMol+[0,currPos'];
+        tNext = tNext+tStep;
+        k = k + 1;
+      endif
   endif
 
   tIter = tIter + 1;
@@ -99,9 +108,15 @@ end
 
 solvatedMolecule = solvatedMolecule(1:tNext,:);
 
+disp("!QM/XTB");
+
+disp("%qmmm");
+disp(["QMAtoms {" , num2str(0),  ":" , num2str(size(myMol,1)-1), "} end"]);
+
+
 #Remember to change the name of your output .xyz file so not to overwrite the previous ones.
 #Uncomment next line for saving
-#save solvatedMoleculeB.xyz solvatedMolecule -ascii;
+save solvatedMoleculeB.xyz solvatedMolecule -ascii;
 
 
 
